@@ -414,6 +414,26 @@ bool Parser::deserializeIntoFlatContainer(const std::string& msg_identifier,
       }
       else // NOT a BLOB
       {
+        // hack to handle empty arrays. store an object of type other in the output (otherwise OTHER isn't used for anything afaik)
+        if(array_size == 0) {
+            if( field.isArray() && DO_STORE)
+            {
+              new_tree_leaf.index_array.back() = 0;
+            }
+            if( flat_container->value.size() <= value_index)
+            {
+              const size_t increased_size = std::max( size_t(32), flat_container->value.size() *  3/2);
+              flat_container->value.resize( increased_size );
+            }
+
+            Variant var; // defaults to OTHER type with nullptr as storage
+            if( DO_STORE )
+            {
+              flat_container->value[value_index] = std::make_pair( new_tree_leaf, std::move(var) );
+              value_index++;
+            }
+        }
+
         for (int i=0; i<array_size; i++ )
         {
           if( field.isArray() && DO_STORE)
